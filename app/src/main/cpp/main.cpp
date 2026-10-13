@@ -14,7 +14,7 @@
 
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "JERRY/Native", __VA_ARGS__)
 
-#define DEX_FILE_PATH "/data/adb/modules/JerryManager/classes.dex"
+#define DEX_FILE_PATH "/data/adb/modules/JerryManager/spoof/classes.dex"
 
 #define PROP_FILE_PATH "/data/adb/JerryManager/spoof/fix.prop"
 

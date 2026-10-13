@@ -26,13 +26,13 @@ jobs:
 
       - name: Collect files
         run: |
-          mkdir -p out/zygisk
-          cp module/classes.dex out/classes.dex
-          cp module/zygisk/*.so out/zygisk/
-          ls -l out out/zygisk
+          mkdir -p artifact/zygisk artifact/spoof
+          cp module/classes.dex artifact/spoof/classes.dex
+          cp module/zygisk/*.so artifact/zygisk/
+          ls -lR artifact
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: jerry-spoof-binaries
-          path: out/
+          path: artifact/
