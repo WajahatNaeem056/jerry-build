@@ -67,7 +67,7 @@ public final class EntryPoint {
     }
 
     public static void init(int logLevel, int spoofBuildVal, int spoofProviderVal, int spoofSignatureVal) {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             HiddenApiBypass.addHiddenApiExemptions("");
         }
         verboseLogs = logLevel;
@@ -188,52 +188,10 @@ public final class EntryPoint {
         }
         return false;
     }
-	
-	private static void stripFinal(Field field, String name) {
-        try {
-            Field accessFlagsField = Field.class.getDeclaredField("accessFlags");
-            accessFlagsField.setAccessible(true);
-            accessFlagsField.setInt(field, field.getModifiers() & ~java.lang.reflect.Modifier.FINAL);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            LOG(String.format("Couldn't modify accessFlags for '%s': " + e, name));
-        }
-    }
 
     private static void setField(String name, String value) {
         if (value.isEmpty()) {
-            try {
-                Field field;
-                if (classContainsField(Build.class, name)) {
-                    field = Build.class.getDeclaredField(name);
-                } else if (classContainsField(Build.VERSION.class, name)) {
-                    field = Build.VERSION.class.getDeclaredField(name);
-                } else {
-                    LOG(String.format("Couldn't determine '%s' class name", name));
-                    return;
-                }
-
-                field.setAccessible(true);
-				stripFinal(field, name);
-                Class<?> fieldType = field.getType();
-
-                if (fieldType == String.class) {
-                    setFieldNative(field.getDeclaringClass(), field, fieldType.getName(), "");
-                    LOG(String.format("[%s]: Cleared (set to empty string)", name));
-                } else if (fieldType == int.class) {
-                    setFieldNative(field.getDeclaringClass(), field, fieldType.getName(), Integer.valueOf(0));
-                    LOG(String.format("[%s]: Cleared (set to 0)", name));
-                } else if (fieldType == long.class) {
-                    setFieldNative(field.getDeclaringClass(), field, fieldType.getName(), Long.valueOf(0L));
-                    LOG(String.format("[%s]: Cleared (set to 0L)", name));
-                } else if (fieldType == boolean.class) {
-                    setFieldNative(field.getDeclaringClass(), field, fieldType.getName(), Boolean.valueOf(false));
-                    LOG(String.format("[%s]: Cleared (set to false)", name));
-                } else {
-                    LOG(String.format("[%s]: Unknown type %s, not cleared", name, fieldType));
-                }
-            } catch (Exception e) {
-                LOG(String.format("Error resetting field '%s': %s", name, e));
-            }
+            LOG(String.format("%s is empty, skipping", name));
             return;
         }
 
@@ -255,13 +213,15 @@ public final class EntryPoint {
             return;
         }
         field.setAccessible(true);
-		stripFinal(field, name);
-		Class<?> fieldType = field.getType();
-		try {
-            Object rawOld = field.get(null);
-            oldValue = (fieldType == String[].class)
-                ? String.join(", ", (String[]) rawOld)
-                : String.valueOf(rawOld);
+        try {
+            Field accessFlagsField = Field.class.getDeclaredField("accessFlags");
+            accessFlagsField.setAccessible(true);
+            accessFlagsField.setInt(field, field.getModifiers() & ~java.lang.reflect.Modifier.FINAL);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            LOG(String.format("Couldn't modify accessFlags for '%s': " + e, name));
+        }
+        try {
+            oldValue = String.valueOf(field.get(null));
         } catch (IllegalAccessException e) {
             LOG(String.format("Couldn't access '%s' field value: " + e, name));
             return;
@@ -270,26 +230,15 @@ public final class EntryPoint {
             if (verboseLogs > 2) LOG(String.format("[%s]: %s (unchanged)", name, value));
             return;
         }
+        Class<?> fieldType = field.getType();
         if (fieldType == String.class) {
             newValue = value;
         } else if (fieldType == int.class) {
-            try {
-                newValue = Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                LOG(String.format("Invalid int value '%s' for field '%s'", value, name));
-                return;
-            }
+            newValue = Integer.parseInt(value);
         } else if (fieldType == long.class) {
-            try {
-                newValue = Long.parseLong(value);
-            } catch (NumberFormatException e) {
-                LOG(String.format("Invalid long value '%s' for field '%s'", value, name));
-                return;
-            }
+            newValue = Long.parseLong(value);
         } else if (fieldType == boolean.class) {
             newValue = Boolean.parseBoolean(value);
-		} else if (fieldType == String[].class) {
-            newValue = value.split(",");
         } else {
             LOG(String.format("Couldn't convert '%s' to '%s' type", value, fieldType));
             return;
@@ -299,11 +248,10 @@ public final class EntryPoint {
         } catch (Exception e) {
             LOG(String.format("Native setField failed for '%s': " + e, name));
         }
-        LOG(String.format("[%s]: %s -> %s", name, oldValue,
-            fieldType == String[].class ? String.join(", ", (String[]) newValue) : value));
+        LOG(String.format("[%s]: %s -> %s", name, oldValue, value));
     }
-	
-	private static native void setFieldNative(Class<?> targetClass, Field field, String type, Object value);
+
+    private static native void setFieldNative(Class<?> targetClass, Field field, String type, Object value);
 
     private static String logParseField(Field field) {
         Object value = null;
@@ -327,6 +275,6 @@ public final class EntryPoint {
     }
 
     static void LOG(String msg) {
-        Log.d("JERRY/Java:APP", msg);
+        Log.d("JERRY/Java:DG", msg);
     }
 }
